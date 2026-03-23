@@ -1,13 +1,50 @@
 {
-  "name": "futures",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "name": "@michthemaker/futures",
+  "version": "0.1.0",
+  "description": "Lazy Evaluated JavaScript Asynchronous Primitive",
+  "keywords": [
+    "async",
+    "async-runtime",
+    "asynchronous",
+    "futures",
+    "lazy-evaluated",
+    "promises",
+    "runtime"
+  ],
+  "homepage": "https://github.com/michthemaker/futures/tree/main/",
+  "bugs": {
+    "url": "https://github.com/michthemaker/futures/issues",
+    "email": "michthebrand@gmail.com"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.32.1"
+  "license": "MIT",
+  "author": "Michthebrand <michthebrand@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michthemaker/futures.git"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts --watch",
+    "start": "tsup --watch",
+    "build": "tsup"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0"
+  },
+  "packageManager": "pnpm@10.28.0"
 }

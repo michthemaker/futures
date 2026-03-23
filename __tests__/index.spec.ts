@@ -8,11 +8,9 @@ describe('Future', () => {
 	it('throws single use of Future instance', () => {
 		const future = new Ready('40')
 
-		Future.run(future, (value) => {
-			console.log(value)
+		Future.run(future, () => {
 		})
-		expect(() => Future.run(future, (value) => {
-			console.log(value, 'x2')
+		expect(() => Future.run(future, () => {
 		})).toThrow()
 	})
 })
@@ -173,5 +171,58 @@ describe("AndThen", () => {
 
 		vi.advanceTimersByTime(8000) // jump 8 seconds (8s over 5s initial)
     expect(result).toBe('still resolved');
+  });
+});
+
+
+describe("All", () => {
+  it("resolves when all futures resolve", () => {
+    let result: unknown;
+
+    const firstFuture = new TimerFuture(3000),
+      secondFuture = new TimerFuture(4000);
+		Future.run(
+    	Future.all([firstFuture, secondFuture]),
+			() => {
+				result = 'fully resolved'
+      }
+    );
+
+		vi.advanceTimersByTime(3001); // jump 3.001 seconds
+		expect(result).toBeUndefined()
+
+		vi.advanceTimersByTime(1000); // now in 4.001 seconds
+    expect(result).toBe('fully resolved');
+  });
+  it("resolves with correct tuple in correct order", () => {
+    let result: unknown;
+
+		const tupleInOrder = [3000, 4000, 6000] as const
+		const futuresTuple = tupleInOrder.map(n => new TimerFuture(n).andThen(() => new Ready(n)))
+
+		Future.run(
+    	Future.all(futuresTuple),
+			(v) => {
+				result = v
+      }
+    );
+
+		vi.advanceTimersByTime(6001); // jump 6 seconds
+		expect(result).toEqual([3000, 4000, 6000])
+	});
+  it("does not resolve if any future is still pending", () => {
+    let result: unknown;
+
+    const firstFuture = new TimerFuture(3000),
+      secondFuture = new TimerFuture(4000);
+		Future.run(
+    	Future.all([firstFuture, secondFuture]),
+			() => {
+				result = 'fully resolved'
+      }
+    );
+
+		vi.advanceTimersByTime(3001); // jump 3.001 seconds
+		expect(result).toBeUndefined()
   });
 });

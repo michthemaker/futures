@@ -2,6 +2,15 @@ type FuncWithArg<T, R = void> = (arg: T) => R;
 
 type VoidFunction = () => void;
 
+const Result = {
+	Ok<T>(value: T) {
+		return { ok: true, value }
+	},
+	Error<T>(error: T) {
+		return { ok: false, error }
+	}
+}
+
 abstract class Future<T> {
   protected done = false;
   protected _consumed = false;
@@ -196,4 +205,4 @@ class Race<T> extends Future<T> {
   }
 }
 
-export { Future, Ready, YieldNow, TimerFuture, AndThen, All, Race };
+export { Result, Future, Ready, YieldNow, TimerFuture, AndThen, All, Race };

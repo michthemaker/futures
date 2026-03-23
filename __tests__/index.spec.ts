@@ -4,6 +4,19 @@ beforeEach(() => {
   vi.useFakeTimers();
 });
 
+describe('Future', () => {
+	it('throws single use of Future instance', () => {
+		const future = new Ready('40')
+
+		Future.run(future, (value) => {
+			console.log(value)
+		})
+		expect(() => Future.run(future, (value) => {
+			console.log(value, 'x2')
+		})).toThrow()
+	})
+})
+
 describe("Ready", () => {
   it("resolves immediately with given value", () => {
     let result: unknown;

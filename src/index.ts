@@ -3,7 +3,8 @@ type FuncWithArg<T, R = void> = (arg: T) => R;
 type VoidFunction = () => void;
 
 abstract class Future<T> {
-  protected done = false;
+	protected done = false;
+	protected _consumed = false
   get [Symbol.toStringTag]() {
     return `Future`;
   }
@@ -12,7 +13,10 @@ abstract class Future<T> {
    * Do not call directly - use Future.run()
    */
   abstract poll(waker: VoidFunction): { ready: boolean; value: T | undefined };
-  static run<T>(future: Future<T>, onComplete: FuncWithArg<T>) {
+	static run<T>(future: Future<T>, onComplete: FuncWithArg<T>) {
+		if (future._consumed)
+			throw new Error(`This ${future.constructor.name} { } instance has already been run. Futures are single-use - create  a new instance`)
+		future._consumed = true
     function waker() {
       const result = future.poll(waker);
       if (result.ready) onComplete(result.value!);

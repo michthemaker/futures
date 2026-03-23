@@ -39,8 +39,10 @@
   },
   "scripts": {
     "dev": "tsx src/index.ts --watch",
-    "start": "tsup --watch",
-    "build": "tsup"
+    "check": "tsc -b --noEmit",
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "format": "oxfmt ."
   },
   "devDependencies": {
     "oxfmt": "^0.41.0",

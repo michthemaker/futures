@@ -38,17 +38,20 @@
     }
   },
   "scripts": {
-    "dev": "tsx src/index.ts --watch",
+    "dev": "tsx --watch src/index.ts",
+    "test": "vitest",
     "check": "tsc -b --noEmit",
     "build": "tsup",
     "clean": "rm -rf dist",
     "format": "oxfmt ."
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "oxfmt": "^0.41.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   },
   "packageManager": "pnpm@10.28.0"
 }

@@ -1,9 +1,11 @@
 type FuncWithArg<T, R = void> = (arg: T) => R;
 
+type VoidFunction = () => void;
+
 abstract class Future<T> {
-	protected done = false;
-	get [Symbol.toStringTag]() {
-		return `Future`
+  protected done = false;
+  get [Symbol.toStringTag]() {
+    return `Future`;
   }
   /**
    * Method for implementing custom Futures.
@@ -23,19 +25,15 @@ abstract class Future<T> {
   ): All<{
     [K in keyof T]: T[K] extends Future<infer U> ? U : never;
   }> {
-    return new Race(futures);
-  }
-  static race<const T extends Future<any>[]>(
-    futures: [...T]
-  ): All<{
-    [K in keyof T]: T[K] extends Future<infer U> ? U : never;
-  }> {
     return new All(futures);
+  }
+  static race<T>(futures: Future<T>[]): Race<T> {
+    return new Race(futures);
   }
   andThen<U>(fn: FuncWithArg<T, Future<U>>) {
     return new AndThen(this, fn);
-	}
-
+  }
+  cancel(): void {}
 }
 
 class Ready<T> extends Future<T> {
@@ -54,30 +52,35 @@ class TimerFuture extends Future<undefined> {
   protected ms: number;
   protected done: boolean = false;
   private started: boolean = false;
+  private timerId: ReturnType<typeof setTimeout> | null = null;
   constructor(ms: number) {
     super();
     this.ms = ms;
   }
 
   poll(waker: VoidFunction) {
-    console.log("we polled");
     if (this.done) {
       return { ready: true, value: undefined };
     }
 
     if (!this.started) {
-      console.log("we have started");
       this.started = true;
-      setTimeout(() => {
+      this.timerId = setTimeout(() => {
         this.done = true;
         waker();
       }, this.ms);
     }
     return { ready: false, value: undefined };
   }
+
+  cancel(): void {
+    if (this.timerId !== null) {
+      clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+  }
 }
 
-/// test this soon
 class YieldNow extends Future<undefined> {
   constructor() {
     super();
@@ -114,6 +117,11 @@ class AndThen<T, U> extends Future<U> {
     }
     return this.next.poll(waker);
   }
+
+  cancel(): void {
+    this.future.cancel();
+    this.next?.cancel();
+  }
 }
 
 class All<T extends any[]> extends Future<T> {
@@ -142,49 +150,44 @@ class All<T extends any[]> extends Future<T> {
 
     return { ready: false, value: undefined };
   }
+
+  cancel(): void {
+    this.futures.forEach((f) => f.cancel());
+  }
 }
 
-class Race<T extends any[]> extends Future<T> {
-  protected futures: Future<any>[];
-  protected results: T;
+class Race<T> extends Future<T> {
+  protected futures: Future<T>[];
+  protected result: T;
+  protected ended: boolean;
   constructor(futures: Future<T>[]) {
     super();
     this.futures = futures;
-    this.results = new Array(futures.length).fill(undefined) as any;
+    this.result = undefined as any;
+    this.done = false;
+    this.ended = false;
   }
   poll(waker: VoidFunction) {
-    this.futures.forEach((future, i) => {
-      if (this.completed[i]) return;
+    if (this.done) return { ready: true, value: this.result };
+
+    for (const future of this.futures) {
       const result = future.poll(waker);
       if (result.ready) {
-        this.completed[i] = true;
-        this.results[i] = result.value!;
+        this.done = true;
+        this.result = result.value!;
+        for (const loser of this.futures) {
+          if (loser !== future) loser.cancel();
+        }
+        return { ready: true, value: this.result };
       }
-    });
-
-    if (this.completed.every(Boolean)) {
-      return { ready: true, value: this.results };
     }
 
     return { ready: false, value: undefined };
   }
+
+  cancel(): void {
+    this.futures.forEach((f) => f.cancel());
+  }
 }
 
-const timerFuture = new TimerFuture(3000)
-  .andThen(() => {
-    return new Ready(4000);
-  })
-
-// Future.run(timerFuture, (v) => {
-//   console.log(v, "and me");
-//   console.log("============== ==============");
-// });
-
-const timeout = new TimerFuture(5000);
-const allFutures = Future.all([new TimerFuture(3000), new Ready(3000)]);
-
-Future.run(timeout, () => {
-  Future.run(allFutures, (values) => {
-    console.log(values);
-  });
-});
+export { Future, Ready, YieldNow, TimerFuture, AndThen, All, Race };

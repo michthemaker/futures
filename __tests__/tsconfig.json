@@ -1,12 +1,11 @@
 {
   "composite": true,
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",
     // remove dom
     "lib": ["ES2024", "DOM"],
     "module": "ESNext",
-    "types": [],
+    "types": ["vitest/globals", "node"],
     "skipLibCheck": true,
     "declaration": true,
 
@@ -26,6 +25,5 @@
     "noUncheckedSideEffectImports": true,
     "outDir": "dist"
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": ["./"]
 }

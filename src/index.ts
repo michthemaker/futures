@@ -2,13 +2,19 @@ type FuncWithArg<T, R = void> = (arg: T) => R;
 
 type VoidFunction = () => void;
 
+const RESULT_TAG = Symbol('Result');
+
 const Result = {
 	Ok<T>(value: T) {
-		return { ok: true, value }
+		return { ok: true, value, [RESULT_TAG]: true }
 	},
-	Error<T>(error: T) {
-		return { ok: false, error }
+	Err<T>(error: T) {
+		return { ok: false, error, [RESULT_TAG]: true }
 	}
+}
+
+function isResult(value: unknown): value is { ok: boolean; error?: unknown; [RESULT_TAG]: true } {
+  return typeof value === 'object' && value !== null && (value as any)[RESULT_TAG] === true;
 }
 
 abstract class Future<T> {
@@ -128,6 +134,9 @@ class AndThen<T, U> extends Future<U> {
     if (!this.next) {
       const result = this.future.poll(waker);
       if (!result.ready) return { ready: false, value: undefined };
+      // short-circuit: if upstream resolved with a Result.Err, pass it through as-is
+      if (isResult(result.value) && !result.value.ok)
+        return { ready: true, value: result.value as unknown as U };
       this.next = this.fn(result.value!);
     }
     return this.next.poll(waker);

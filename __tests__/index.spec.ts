@@ -231,43 +231,43 @@ describe("Race", () => {
     vi.advanceTimersByTime(3001); // jump 3.001 seconds
     expect(result).toBe(3000);
   });
-	it("cancels all losing futures", () => {
-		vi.useFakeTimers()
+  it("cancels all losing futures", () => {
+    vi.useFakeTimers();
 
     const tupleInOrder = [4000, 6000, 3000] as const;
     const futuresTuple = tupleInOrder.map((n) =>
       new TimerFuture(n).andThen(() => new Ready(n))
-		);
+    );
 
     // spy on cancel of each future
-    const cancelSpies = futuresTuple.map(f => vi.spyOn(f, 'cancel'))
+    const cancelSpies = futuresTuple.map((f) => vi.spyOn(f, "cancel"));
 
     Future.run(Future.race(futuresTuple), (v) => {});
 
-		vi.advanceTimersByTime(3001); // jump 3.001 seconds
+    vi.advanceTimersByTime(3001); // jump 3.001 seconds
 
-		// losers are index 0 and 1
-		expect(cancelSpies[0]).toHaveBeenCalledTimes(1)
-		expect(cancelSpies[1]).toHaveBeenCalledTimes(1)
-		// winner is index 2 (3000ms)
-		expect(cancelSpies[2]).not.toHaveBeenCalled()
+    // losers are index 0 and 1
+    expect(cancelSpies[0]).toHaveBeenCalledTimes(1);
+    expect(cancelSpies[1]).toHaveBeenCalledTimes(1);
+    // winner is index 2 (3000ms)
+    expect(cancelSpies[2]).not.toHaveBeenCalled();
   });
-	it("only resolves once if multiple futures finish close together", () => {
-		// create an object so we can use spy on it
-		let obj = {
-			onComplete: (_: any) => {}
-		}
+  it("only resolves once if multiple futures finish close together", () => {
+    // create an object so we can use spy on it
+    let obj = {
+      onComplete: (_: any) => {},
+    };
 
     const tupleInOrder = [3001, 3000, 4000] as const;
     const futuresTuple = tupleInOrder.map((n) =>
       new TimerFuture(n).andThen(() => new Ready(n))
     );
-		const onCompleteSpy = vi.spyOn(obj, 'onComplete')
+    const onCompleteSpy = vi.spyOn(obj, "onComplete");
 
     Future.run(Future.race(futuresTuple), onCompleteSpy);
 
-		vi.advanceTimersByTime(3001); // jump 3.001 seconds
+    vi.advanceTimersByTime(3001); // jump 3.001 seconds
 
-		expect(onCompleteSpy).toHaveBeenCalledTimes(1)
+    expect(onCompleteSpy).toHaveBeenCalledTimes(1);
   });
 });

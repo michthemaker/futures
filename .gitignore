@@ -3,4 +3,4 @@
 /*.sh
 /*.tsbuildinfo
 src/dom/
-agent.md
+release.sh

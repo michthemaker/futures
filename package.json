@@ -38,6 +38,9 @@
       "import": "./dist/index.js"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsx --watch src/index.ts",
     "test": "vitest",

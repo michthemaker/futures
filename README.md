@@ -1,6 +1,6 @@
 # @michthemaker/futures
 
-A poll-based async runtime for JavaScript/TypeScript inspired by Rust's `Future` trait. Zero Promises under the hood. Zero `async/await` required. Fully lazy — nothing executes until `Future.run()` is called.
+A poll-based async runtime for TypeScript inspired by Rust's `Future` trait. Zero Promises under the hood. Zero `async/await` required. Fully lazy — nothing executes until `Future.run()` is called.
 
 ---
 

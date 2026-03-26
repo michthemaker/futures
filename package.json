@@ -1,6 +1,6 @@
 {
   "name": "@michthemaker/futures",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Poll-based async runtime for TypeScript",
   "keywords": [
     "async",
@@ -47,6 +47,7 @@
     "format": "oxfmt ."
   },
   "devDependencies": {
+    "@changesets/cli": "^2.30.0",
     "@types/node": "^25.5.0",
     "oxfmt": "^0.41.0",
     "tsup": "^8.5.1",

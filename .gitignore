@@ -4,3 +4,4 @@
 /*.tsbuildinfo
 src/dom/
 release.sh
+.npmrc

@@ -151,8 +151,8 @@ describe("FetchFuture", () => {
     vi.useRealTimers();
   });
 
-	it("returns parse error on invalid JSON", () => {
-		vi.useFakeTimers()
+  it("returns parse error on invalid JSON", () => {
+    vi.useFakeTimers();
     mockHttpRequest(200, "this is not json", "", 5000);
 
     let result: Result<FetchResponse<Data>, FetchError> | undefined;
@@ -169,7 +169,7 @@ describe("FetchFuture", () => {
     expect(result.ok).toBe(false);
 
     if (result.ok) return;
-		expect(result.error.kind).toBe("parse");
-    vi.useRealTimers()
+    expect(result.error.kind).toBe("parse");
+    vi.useRealTimers();
   });
 });

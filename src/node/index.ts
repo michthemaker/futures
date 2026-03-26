@@ -19,12 +19,79 @@ const DEFAULT_FETCH_OPTIONS: Required<FetchOptions> = {
   parseResponse: true,
 };
 
+/**
+ * A future that performs an HTTP or HTTPS request and resolves with the response.
+ *
+ * Built on `node:http` and `node:https` — no `fetch` API, no Promises. The request is
+ * **lazy**: nothing is sent until the future is driven by `Future.run()`.
+ *
+ * Always resolves to `Result<FetchResponse<T>, FetchError>` — network failures, HTTP errors,
+ * parse failures, and timeouts are all represented as `Result.Err` values, never thrown.
+ *
+ * ## Supported methods
+ * `GET` · `POST` · `PUT` · `PATCH` · `DELETE` · `HEAD` · `OPTIONS`
+ *
+ * ## Error kinds
+ * - `http` — response status >= 400, includes `status` and `statusText`
+ * - `network` — `ECONNREFUSED`, `ECONNRESET`
+ * - `dns` — `ENOTFOUND`, domain does not exist
+ * - `timeout` — request exceeded the configured `timeout` ms
+ * - `parse` — response body failed `JSON.parse`
+ * - `ssl` — certificate or SSL handshake error
+ * - `aborted` — request was destroyed mid-flight
+ * - `invalid_url` — the provided URL string could not be parsed
+ *
+ * @template T - The expected shape of the parsed response body.
+ *
+ * @example
+ * ```ts
+ * type Todo = { id: number; title: string; completed: boolean };
+ *
+ * Future.run(
+ *   new FetchFuture<Todo>("https://jsonplaceholder.typicode.com/todos/1"),
+ *   (result) => {
+ *     if (!result.ok) {
+ *       console.error(result.error.kind, result.error.message);
+ *       return;
+ *     }
+ *     console.log(result.value.data);   // Todo
+ *     console.log(result.value.status); // 200
+ *   }
+ * );
+ * ```
+ *
+ * @example
+ * ```ts
+ * // POST with a JSON body and custom headers
+ * Future.run(
+ *   new FetchFuture("https://api.example.com/items", {
+ *     method: "POST",
+ *     headers: { Authorization: "Bearer token" },
+ *     body: { name: "widget", qty: 3 },
+ *     timeout: 5_000,
+ *   }),
+ *   (result) => {
+ *     if (result.ok) console.log(result.value.data);
+ *   }
+ * );
+ * ```
+ */
 class FetchFuture<T> extends Future<Result<FetchResponse<T>, FetchError>> {
   protected url: string;
   protected options: FetchOptions;
   protected started: boolean = false;
   protected value: Result<FetchResponse<T>, FetchError> | undefined;
   private req: http.ClientRequest | null = null;
+
+  /**
+   * @param url - The full URL to request, including protocol (`http://` or `https://`).
+   * @param options - Optional request configuration. All fields have sensible defaults:
+   *   - `method` defaults to `"GET"`
+   *   - `timeout` defaults to `30_000` ms
+   *   - `parseResponse` defaults to `true` (auto `JSON.parse` the response body)
+   *   - `body` objects are automatically `JSON.stringify`'d with `Content-Type: application/json`
+   *   - `query` entries are appended to the URL as search parameters
+   */
   constructor(url: string, options?: FetchOptions) {
     super();
     this.url = url;
@@ -38,6 +105,30 @@ class FetchFuture<T> extends Future<Result<FetchResponse<T>, FetchError>> {
     };
   }
 
+  /**
+   * Polls the future for completion.
+   *
+   * On the first call, the HTTP request is constructed and sent. Subsequent calls
+   * (before the response arrives) return immediately with `{ ready: false }` — the
+   * request is already in flight and only one is ever created.
+   *
+   * Once the response completes (or an error occurs), `waker` is called, the result
+   * is stored, and all further calls return `{ ready: true, value }`.
+   *
+   * Possible outcomes stored as `Result`:
+   * - `Result.Ok` — successful response with `data`, `status`, `statusText`, and `headers`
+   * - `Result.Err({ kind: "http" })` — response status >= 400
+   * - `Result.Err({ kind: "parse" })` — response body could not be `JSON.parse`'d
+   * - `Result.Err({ kind: "timeout" })` — request exceeded the configured timeout
+   * - `Result.Err({ kind: "network" | "dns" | "ssl" | "aborted" })` — transport-level error
+   * - `Result.Err({ kind: "invalid_url" })` — the URL string failed to parse
+   *
+   * **Do not call this method directly.** Use `Future.run()` instead.
+   *
+   * @param waker - Called once when the request has settled (success or error), signalling
+   *   the runtime to re-poll and collect the result.
+   * @returns `{ ready: true, value }` once settled, `{ ready: false, value: undefined }` while pending.
+   */
   poll(waker: () => void): {
     ready: boolean;
     value: Result<FetchResponse<T>, FetchError> | undefined;
@@ -191,6 +282,25 @@ class FetchFuture<T> extends Future<Result<FetchResponse<T>, FetchError>> {
     return { ready: false, value: undefined };
   }
 
+  /**
+   * Cancels the in-flight HTTP request by destroying the underlying socket.
+   *
+   * Safe to call at any point — before the request starts, while it is in flight,
+   * or after it has already settled (in which case this is a no-op). Once cancelled,
+   * the future will never call `waker` again and will never resolve.
+   *
+   * @example
+   * ```ts
+   * const req = new FetchFuture("https://api.example.com/slow-endpoint");
+   *
+   * Future.run(req, (result) => {
+   *   console.log(result);
+   * });
+   *
+   * // Abort the request before it completes
+   * setTimeout(() => req.cancel(), 500);
+   * ```
+   */
   cancel() {
     this.req?.destroy();
     this.req = null;

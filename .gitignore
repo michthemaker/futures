@@ -2,3 +2,5 @@
 /dist/
 /*.sh
 /*.tsbuildinfo
+src/dom/
+agent.md

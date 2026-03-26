@@ -2,6 +2,8 @@ type FuncWithArg<T, R = void> = (arg: T) => R;
 
 type VoidFunction = () => void;
 
+type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
+
 const RESULT_TAG = Symbol("Result");
 
 /**
@@ -35,7 +37,7 @@ const Result = {
    * ```
    */
   Ok<T>(value: T) {
-    return { ok: true, value, [RESULT_TAG]: true };
+    return { ok: true, value, [RESULT_TAG]: true } as const;
   },
 
   /**
@@ -51,7 +53,7 @@ const Result = {
    * ```
    */
   Err<T>(error: T) {
-    return { ok: false, error, [RESULT_TAG]: true };
+    return { ok: false, error, [RESULT_TAG]: true } as const;
   },
 
   /**
@@ -81,7 +83,7 @@ const Result = {
 };
 
 /**
- * The base class for all asynchronous computations in this library.
+ * The base class for all asynchronous computations.
  *
  * A `Future<T>` represents a value that will be available at some point in the future.
  * It is inspired by Rust's `std::future::Future` trait and uses a poll-based execution model:

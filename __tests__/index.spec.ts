@@ -242,7 +242,7 @@ describe("Race", () => {
     // spy on cancel of each future
     const cancelSpies = futuresTuple.map((f) => vi.spyOn(f, "cancel"));
 
-    Future.run(Future.race(futuresTuple), (v) => {});
+    Future.run(Future.race(futuresTuple), () => {});
 
     vi.advanceTimersByTime(3001); // jump 3.001 seconds
 

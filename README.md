@@ -1,4 +1,6 @@
-# @michthemaker/futures
+# Futures
+
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![npm version](https://img.shields.io/npm/v/@michthemaker/futures.svg?style=flat)](https://www.npmjs.com/package/@michthemaker/futures) [![bundle size](https://img.shields.io/bundlephobia/minzip/@michthemaker/futures)](https://bundlephobia.com/package/@michthemaker/futures) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
 A poll-based async runtime for TypeScript inspired by Rust's `Future` trait. Zero Promises under the hood. Zero `async/await` required. Fully lazy — nothing executes until `Future.run()` is called.
 

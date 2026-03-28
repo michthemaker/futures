@@ -3,5 +3,5 @@
 /*.sh
 /*.tsbuildinfo
 src/dom/
-release.sh
+!release.sh
 .npmrc

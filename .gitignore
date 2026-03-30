@@ -2,6 +2,5 @@
 /dist/
 /*.sh
 /*.tsbuildinfo
-src/dom/
 !release.sh
 .npmrc

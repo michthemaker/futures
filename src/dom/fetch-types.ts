@@ -1,3 +1,5 @@
+import type { Result } from "..";
+
 export type FetchErrorKind =
   | "network" // generic network failure (includes dns, ssl, cors — browser gives no detail)
   | "timeout" // request exceeded the configured timeout
@@ -59,3 +61,5 @@ export type FetchResponse<T> = {
   statusText: string;
   headers: HttpHeaders;
 };
+
+export type Response<T> = Result<FetchResponse<T>, FetchError>;

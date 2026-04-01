@@ -325,7 +325,7 @@ class AnimationFrameFuture extends Future<number> {
       waker();
     });
 
-    return { ready: true, value: undefined };
+    return { ready: false, value: undefined };
   }
   cancel() {
     if (this.frameId !== null)

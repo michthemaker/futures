@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { expect, test } from "vitest";
-import { FetchFuture, Future } from "../src/dom";
+import { AnimationFrameFuture, FetchFuture, Future } from "../src/dom";
 
 /**
  * We test with this function to ensure the tests complete
@@ -38,59 +38,124 @@ function* cast<T>(future: Future<T>): Generator<Future<T>, T, T> {
 
 type Todo = { id: number; title: string; completed: boolean };
 
-describe("FetchFuture", () => {
-  test("resolves with correct data", () =>
-    future(function* () {
-      const result = yield* cast(
-        new FetchFuture<Todo>("https://jsonplaceholder.typicode.com/todos/3")
+describe(
+  "FetchFuture",
+  {
+    skip: false,
+  },
+  () => {
+    test("resolves with correct data", () =>
+      future(function* () {
+        const result = yield* cast(
+          new FetchFuture<Todo>("https://jsonplaceholder.typicode.com/todos/3")
+        );
+
+        expect(result.ok).toBe(true);
+
+        if (!result.ok) return;
+
+        expect(result.value.status).toBe(200);
+        expect(result.value.data.id).toBe(3);
+        expect(typeof result.value.data.title).toBe("string");
+        expect(typeof result.value.data.completed).toBe("boolean");
+      }));
+
+    test("returns http error on status >= 400", () =>
+      future(function* () {
+        const result = yield* cast(
+          new FetchFuture<Todo>(
+            "https://jsonplaceholder.typicode.com/todos/99999"
+          )
+        );
+
+        expect(result.ok).toBe(false);
+
+        if (result.ok) return;
+
+        expect(result.error.kind).toBe("http");
+      }));
+
+    test("returns network error on bad url", () =>
+      future(function* () {
+        const result = yield* cast(
+          new FetchFuture<Todo>(
+            "https://this.domain.does.not.exist.xyz/todos/1"
+          )
+        );
+
+        expect(result.ok).toBe(false);
+
+        if (result.ok) return;
+
+        expect(result.error.kind).toBe("network");
+      }));
+
+    test("returns invalid_url error on malformed url", () =>
+      future(function* () {
+        const result = yield* cast(new FetchFuture<Todo>("not a url at all"));
+
+        expect(result.ok).toBe(false);
+
+        if (result.ok) return;
+
+        expect(result.error.kind).toBe("invalid_url");
+      }));
+  }
+);
+
+describe("AnimationFrameFuture", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    const timeouts = new Map<number, ReturnType<typeof setTimeout>>();
+    let id = 0;
+
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+      id++;
+      timeouts.set(
+        id,
+        setTimeout(() => cb(performance.now()), 0)
       );
+      return id;
+    });
+    vi.stubGlobal(
+      "cancelAnimationFrame",
+      vi.fn((frameId: number) => {
+        clearTimeout(timeouts.get(frameId));
+        timeouts.delete(frameId);
+      })
+    );
+  });
 
-      expect(result.ok).toBe(true);
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
 
-      if (!result.ok) return;
+  test("resolves with a timestamp on next frame", () => {
+    let result: number | undefined;
 
-      expect(result.value.status).toBe(200);
-      expect(result.value.data.id).toBe(3);
-      expect(typeof result.value.data.title).toBe("string");
-      expect(typeof result.value.data.completed).toBe("boolean");
-    }));
+    Future.run(new AnimationFrameFuture(), (timestamp) => {
+      result = timestamp;
+    });
+    expect(result).toBeUndefined();
+    vi.advanceTimersByTime(200); // jump 200 ms
+    expect(typeof result).toBe("number");
+  });
 
-  test("returns http error on status >= 400", () =>
-    future(function* () {
-      const result = yield* cast(
-        new FetchFuture<Todo>(
-          "https://jsonplaceholder.typicode.com/todos/99999"
-        )
-      );
+  test("cancel prevents resolution", () => {
+    // this has to be repeated so cancelAnimationFrame can be
 
-      expect(result.ok).toBe(false);
+    let result: number | undefined;
+    const future = new AnimationFrameFuture();
 
-      if (result.ok) return;
+    Future.run(future, (timestamp) => {
+      result = timestamp;
+    });
 
-      expect(result.error.kind).toBe("http");
-    }));
+    future.cancel();
+    expect(cancelAnimationFrame).toHaveBeenCalledTimes(1);
 
-  test("returns network error on bad url", () =>
-    future(function* () {
-      const result = yield* cast(
-        new FetchFuture<Todo>("https://this.domain.does.not.exist.xyz/todos/1")
-      );
-
-      expect(result.ok).toBe(false);
-
-      if (result.ok) return;
-
-      expect(result.error.kind).toBe("network");
-    }));
-
-  test("returns invalid_url error on malformed url", () =>
-    future(function* () {
-      const result = yield* cast(new FetchFuture<Todo>("not a url at all"));
-
-      expect(result.ok).toBe(false);
-
-      if (result.ok) return;
-
-      expect(result.error.kind).toBe("invalid_url");
-    }));
+    vi.advanceTimersByTime(200);
+    expect(result).toBeUndefined();
+  });
 });

@@ -304,6 +304,35 @@ class FetchFuture<T> extends Future<Result<FetchResponse<T>, FetchError>> {
   }
 }
 
-export { FetchFuture };
+class AnimationFrameFuture extends Future<number> {
+  protected done: boolean = false;
+  private frameId: number | null = null;
+  private started: boolean = false;
+  private value: number = 0;
+  constructor() {
+    super();
+  }
+  poll(waker: VoidFunction): { ready: boolean; value: number | undefined } {
+    if (this.done) return { ready: true, value: this.value };
+    if (this.started) return { ready: false, value: undefined };
+
+    this.started = true;
+
+    this.frameId = requestAnimationFrame((timestamp) => {
+      this.done = true;
+      this.value = timestamp;
+      this.frameId = null;
+      waker();
+    });
+
+    return { ready: true, value: undefined };
+  }
+  cancel() {
+    if (this.frameId !== null)
+      (cancelAnimationFrame(this.frameId), (this.frameId = null));
+  }
+}
+
+export { FetchFuture, AnimationFrameFuture };
 export * from "../index";
 export * from "./fetch-types";

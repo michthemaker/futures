@@ -2,6 +2,11 @@
 import { expect, test } from "vitest";
 import { FetchFuture, Future } from "../src/dom";
 
+/**
+ * We test with this function to ensure the tests complete
+ * @param gen
+ * @returns
+ */
 function future<T>(gen: () => Generator<Future<any>, T, any>): Promise<T> {
   return new Promise((resolve, reject) => {
     const iterator = gen();

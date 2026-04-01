@@ -4,6 +4,8 @@
 # ask for NPM_TOKEN from project owner if not set
 #
 # I don't want to dabble with Action Runners for this small yet powerful library
+#
+# I expect you to have versioned new changeset entries
 
 if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then
   echo "Error: Must be on main branch to release"

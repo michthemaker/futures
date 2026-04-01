@@ -1,6 +1,6 @@
 {
   "name": "@michthemaker/futures",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Poll-based async runtime for TypeScript",
   "keywords": [
     "async",
@@ -36,6 +36,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./dom": {
+      "types": "./dist/dom/index.d.ts",
+      "import": "./dist/dom/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js"
     }
   },
   "publishConfig": {

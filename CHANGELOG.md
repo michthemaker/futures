@@ -1,5 +1,11 @@
 # @michthemaker/futures
 
+## 0.2.1
+
+### Patch Changes
+
+- 6cbd9ee: Add dom and node exports in package.json exports field
+
 ## 0.2.0
 
 ### Minor Changes
